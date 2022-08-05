@@ -86,9 +86,9 @@ const getItemsRarity = (metadataList, rarityObject) => {
   }
 };
 
-// calculates rarity for all items/NFT using Jaccard Distances algorithm
+// calculates rarity for all items/NFTs using Jaccard Distances algorithm
 const getItemsRarity_jaccardDistances = (metadataList) => {
-  let z = [];
+  let jaccardDistances = [];
   let avg = [];
 
   // calculate z(i,j) and avg(i)
@@ -96,63 +96,69 @@ const getItemsRarity_jaccardDistances = (metadataList) => {
     for (let j = 0; j < metadataList.length; j++) {
       if (i == j) continue;
 
-      if (z[i] == null) {
-        z[i] = [];
+      if (jaccardDistances[i] == null) {
+        jaccardDistances[i] = [];
       }
 
-      if (z[i][j] == null || z[j][i] == null) {
-        const commonTraitsCnt = getObjectCommonCnt(
-          metadataList[i].attributes,
-          metadataList[j].attributes
-        );
-        const uniqueTraitsCnt = getObjectUniqueCnt(
+      if (jaccardDistances[i][j] == null || jaccardDistances[j][i] == null) {
+        const commonTraitsCount = getObjectCommonCnt(
           metadataList[i].attributes,
           metadataList[j].attributes
         );
 
-        z[i][j] = commonTraitsCnt / uniqueTraitsCnt;
+        const uniqueTraitsCount =
+          metadataList[i].attributes.length +
+          metadataList[j].attributes.length -
+          commonTraitsCount;
+
+        const jaccardIndex = commonTraitsCount / uniqueTraitsCount;
+
+        jaccardDistances[i][j] = 1 - jaccardIndex;
       }
     }
 
     // ps: length-1 because there's always an empty cell in matrix, where i == j
-    avg[i] = z[i].reduce((a, b) => a + b, 0) / (z[i].length - 1);
+    const realLength = metadataList.length - 1;
+    avg[i] = jaccardDistances[i].reduce((a, b) => a + b, 0) / realLength;
   }
 
-  // calculate z(i)
-  let jd = [];
+  // calculate scores (z)
+  let scores = [];
   let avgMax = Math.max(...avg);
   let avgMin = Math.min(...avg);
+  const avgDiff = avgMax - avgMin;
 
   for (let i = 0; i < metadataList.length; i++) {
-    jd[i] = ((avg[i] - avgMin) / (avgMax - avgMin)) * 100;
+    scores[i] = ((avg[i] - avgMin) / avgDiff) * 100;
   }
 
-  let jd_asc = [...jd].sort(function (a, b) {
+  let scores_asc = [...scores].sort(function (a, b) {
     return a - b;
   });
 
   // add JD rarity data to NFT/item
   for (let i = 0; i < metadataList.length; i++) {
-    let scoreIndex = getScoreIndex(jd_asc, jd[i]);
-    jd_asc = markScoreAsUsed(jd_asc, scoreIndex);
+    let scoreIndex = getScoreIndex(scores_asc, scores[i]);
+    scores_asc = markScoreAsUsed(scores_asc, scoreIndex);
 
     metadataList[i].rarity = {
-      score: jd[i],
+      score: scores[i],
     };
     if (network.includeRank) {
-      metadataList[i].rarity.rank = jd.length - scoreIndex;
+      metadataList[i].rarity.rank = jaccardDistances.length - scoreIndex;
     }
   }
+
   return metadataList;
 };
 
-const getScoreIndex = (jd_asc, score) => {
-  return jd_asc.indexOf(score);
+const getScoreIndex = (scores_asc, score) => {
+  return scores_asc.indexOf(score);
 };
 
-const markScoreAsUsed = (jd_asc, scoreIndex) => {
-  jd_asc[scoreIndex] = -1;
-  return jd_asc;
+const markScoreAsUsed = (scores_asc, scoreIndex) => {
+  scores_asc[scoreIndex] = -1;
+  return scores_asc;
 };
 
 // calculates rarity for all items/NFT using Trait/Statistical rarity algorithm(s)
@@ -222,36 +228,20 @@ const getArrayCommonCnt = (arr1, arr2) => {
   }).length;
 };
 
-// get unique elements counter of 2 arrays
-const getArrayUniqueCnt = (arr1, arr2) => {
-  return [...new Set(arr1.concat(arr2))].length;
-};
-
 // get common elements counter of 2 objects
 const getObjectCommonCnt = (obj1, obj2) => {
   let arr1 = [];
   let arr2 = [];
-  for (const [key, value] of Object.entries(obj1)) {
-    arr1.push(JSON.stringify(value));
+  for (const [key, trait] of Object.entries(obj1)) {
+    if (trait.value !== "" && String(trait.value).toLowerCase() !== "none")
+      arr1.push(JSON.stringify(trait.value));
   }
-  for (const [key, value] of Object.entries(obj2)) {
-    arr2.push(JSON.stringify(value));
+  for (const [key, trait] of Object.entries(obj2)) {
+    if (trait.value !== "" && String(trait.value).toLowerCase() !== "none")
+      arr2.push(JSON.stringify(trait.value));
   }
 
   return getArrayCommonCnt(arr1, arr2);
-};
-
-// get unique elements counter of 2 objects
-const getObjectUniqueCnt = (obj1, obj2) => {
-  let arr1 = [];
-  let arr2 = [];
-  for (const [key, value] of Object.entries(obj1)) {
-    arr1.push(JSON.stringify(value));
-  }
-  for (const [key, value] of Object.entries(obj2)) {
-    arr2.push(JSON.stringify(value));
-  }
-  return getArrayUniqueCnt(arr1, arr2);
 };
 
 module.exports = { getGeneralRarity, getItemsRarity };
