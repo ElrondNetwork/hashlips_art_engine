@@ -101,7 +101,7 @@ const getItemsRarity_jaccardDistances = (metadataList) => {
       }
 
       if (jaccardDistances[i][j] == null || jaccardDistances[j][i] == null) {
-        const commonTraitsCount = getObjectCommonCount(
+        const commonTraitsCount = getCommonAttributesCount(
           metadataList[i].attributes,
           metadataList[j].attributes
         );
@@ -221,19 +221,13 @@ const getItemsRarity_TSR = (metadataList, rarityObject) => {
   return metadataList;
 };
 
-// get common elements counter of 2 arrays
-const getArrayCommonCount = (arr1, arr2) => {
-  return arr1.filter((e) => {
-    return arr2.includes(e);
-  }).length;
-};
-
 // get common elements counter of 2 objects
-const getObjectCommonCount = (obj1, obj2) => {
-  return getArrayCommonCount(
-    attributesObjectToStringArray(obj1),
-    attributesObjectToStringArray(obj2)
-  );
+const getCommonAttributesCount = (obj1, obj2) => {
+  const arr1 = attributesObjectToStringArray(obj1);
+  const arr2 = attributesObjectToStringArray(obj2);
+  return arr1.filter((trait) => {
+    return arr2.includes(trait);
+  }).length;
 };
 
 // converts an attributes object into a string array
