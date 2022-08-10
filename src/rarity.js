@@ -6,7 +6,7 @@ const { network } = require(`${basePath}/src/config.js`);
 const getGeneralRarity = (metadataList) => {
   let rarityObject = {};
   let traitOccurances = [];
-  let totalAttributesCnt = 0;
+  let totalAttributesCount = 0;
 
   // count occurrences for all traits/layers & attributes/assets
   metadataList.forEach((item) => {
@@ -16,14 +16,14 @@ const getGeneralRarity = (metadataList) => {
           rarityObject[a.trait_type][a.value].attributeOccurrence++;
         } else {
           rarityObject[a.trait_type][a.value] = { attributeOccurrence: 1 };
-          totalAttributesCnt++;
+          totalAttributesCount++;
         }
 
         traitOccurances[a.trait_type]++;
       } else {
         rarityObject[a.trait_type] = { [a.value]: { attributeOccurrence: 1 } };
         traitOccurances[a.trait_type] = 1;
-        totalAttributesCnt++;
+        totalAttributesCount++;
       }
     });
   });
@@ -51,15 +51,15 @@ const getGeneralRarity = (metadataList) => {
       ) {
         // logic from https://github.com/xterr/nft-generator/blob/d8992d2bcfa729a6b2ef443f9404ffa28102111b/src/components/RarityResolver.ts
         // ps: the only difference being that attributeRarityNormed is calculated only once
-        const totalLayersCnt = Object.keys(traitOccurances).length;
-        const avgAttributesPerTrait = totalAttributesCnt / totalLayersCnt;
+        const totalLayersCount = Object.keys(traitOccurances).length;
+        const avgAttributesPerTrait = totalAttributesCount / totalLayersCount;
         asset[1].attributeFrequency =
           asset[1].attributeOccurrence / metadataList.length;
         asset[1].traitFrequency = asset[1].traitOccurance > 0 ? 1 : 0;
         asset[1].attributeRarity =
           metadataList.length / asset[1].attributeOccurrence;
         asset[1].attributeRarityNormed =
-          asset[1].attributeRarity * (avgAttributesPerTrait / totalLayersCnt);
+          asset[1].attributeRarity * (avgAttributesPerTrait / totalLayersCount);
       }
     });
   });
@@ -101,7 +101,7 @@ const getItemsRarity_jaccardDistances = (metadataList) => {
       }
 
       if (jaccardDistances[i][j] == null || jaccardDistances[j][i] == null) {
-        const commonTraitsCount = getObjectCommonCnt(
+        const commonTraitsCount = getObjectCommonCount(
           metadataList[i].attributes,
           metadataList[j].attributes
         );
@@ -222,30 +222,30 @@ const getItemsRarity_TSR = (metadataList, rarityObject) => {
 };
 
 // get common elements counter of 2 arrays
-const getArrayCommonCnt = (arr1, arr2) => {
+const getArrayCommonCount = (arr1, arr2) => {
   return arr1.filter((e) => {
     return arr2.includes(e);
   }).length;
 };
 
 // get common elements counter of 2 objects
-const getObjectCommonCnt = (obj1, obj2) => {
-  let arr1 = [];
-  let arr2 = [];
-  for (const [key, trait] of Object.entries(obj1)) {
-    const traitType = String(trait.trait_type);
-    const traitValue = String(trait.value);
-    if (traitValue !== "" && String(traitValue).toLowerCase() !== "none")
-      arr1.push(JSON.stringify(`${traitType}_${traitValue}`));
-  }
-  for (const [key, trait] of Object.entries(obj2)) {
-    const traitType = String(trait.trait_type);
-    const traitValue = String(trait.value);
-    if (traitValue !== "" && String(traitValue).toLowerCase() !== "none")
-      arr2.push(JSON.stringify(`${traitType}_${traitValue}`));
-  }
+const getObjectCommonCount = (obj1, obj2) => {
+  return getArrayCommonCount(
+    attributesObjectToStringArray(obj1),
+    attributesObjectToStringArray(obj2)
+  );
+};
 
-  return getArrayCommonCnt(arr1, arr2);
+// converts an attributes object into a string array
+const attributesObjectToStringArray = (attributesObject) => {
+  let arr = [];
+  for (const [key, trait] of Object.entries(attributesObject)) {
+    const traitType = String(trait.trait_type);
+    const traitValue = String(trait.value);
+    if (traitValue !== "" && String(traitValue).toLowerCase() !== "none")
+      arr.push(JSON.stringify(`${traitType}_${traitValue}`));
+  }
+  return arr;
 };
 
 module.exports = { getGeneralRarity, getItemsRarity };
