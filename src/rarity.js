@@ -233,12 +233,16 @@ const getObjectCommonCnt = (obj1, obj2) => {
   let arr1 = [];
   let arr2 = [];
   for (const [key, trait] of Object.entries(obj1)) {
-    if (trait.value !== "" && String(trait.value).toLowerCase() !== "none")
-      arr1.push(JSON.stringify(trait.value));
+    const traitType = String(trait.trait_type);
+    const traitValue = String(trait.value);
+    if (traitValue !== "" && String(traitValue).toLowerCase() !== "none")
+      arr1.push(JSON.stringify(`${traitType}_${traitValue}`));
   }
   for (const [key, trait] of Object.entries(obj2)) {
-    if (trait.value !== "" && String(trait.value).toLowerCase() !== "none")
-      arr2.push(JSON.stringify(trait.value));
+    const traitType = String(trait.trait_type);
+    const traitValue = String(trait.value);
+    if (traitValue !== "" && String(traitValue).toLowerCase() !== "none")
+      arr2.push(JSON.stringify(`${traitType}_${traitValue}`));
   }
 
   return getArrayCommonCnt(arr1, arr2);
